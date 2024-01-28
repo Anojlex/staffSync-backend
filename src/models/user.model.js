@@ -18,7 +18,7 @@ const userSchema = new Schema(
             type: String,
             required: true,
             unique: true,
-            lowecase: true,
+            lowercase: true,
             trim: true,
             index: true,
         },
@@ -160,8 +160,75 @@ const userSchema = new Schema(
 
         refreshToken: {
             type: String
+        },
+        salary: {
+            basic: {
+                type: Number,
+                required: false
+            },
+            HRA: {
+                type: Number,
+                required: false
+            },
+            PA: {
+                type: Number,
+                required: false
+            },
+            DA: {
+                type: Number,
+                required: false
+            },
+
+            SPA: {
+                type: Number,
+                required: false
+            },
+
+            EPF: {
+                type: Number,
+                required: false
+            },
+
+            PT: {
+                type: Number,
+                required: false
+            },
+            IT: {
+                type: Number,
+                required: false
+            },
+            conveyance: {
+                type: Number,
+                required: false
+            },
+            medical: {
+                type: Number,
+                required: false
+            },
+            bonus: {
+                type: Number,
+                required: false
+            },
+            gratuity: {
+                type: Number,
+                required: false
+            },
+            totalDeductions: {
+                type: Number,
+                required: false
+            },
+            totalEarnings: {
+                type: Number,
+                required: false
+            },
+            netSalary: {
+                type: Number,
+                required: false
+            },
         }
+
     },
+
     {
         timestamps: true
     }
@@ -204,5 +271,44 @@ userSchema.methods.generateRefreshToken = function () {
         }
     )
 }
+
+
+
+
+userSchema.pre("validate", async function (next) {
+
+    const salaryPaths = [
+        'salary.basic', 'salary.HRA',
+        'salary.PA', 'salary.DA', 'salary.SPA', 'salary.EPF',
+        'salary.PT', 'salary.IT', 'salary.conveyance', 'salary.medical',
+        'salary.gratuity'
+    ];
+
+    if (!this.isModified(...salaryPaths)) {
+        return next();
+    }
+
+    try {
+        this.salary.totalDeductions = (this.salary.basic * this.salary.EPF / 100) +
+            (this.salary.basic * this.salary.PT / 100) +
+            (this.salary.basic * this.salary.IT / 100);
+
+        // Calculate total earnings
+        this.salary.totalEarnings = this.salary.basic +
+            (this.salary.basic * (this.salary.HRA / 100 + this.salary.PA / 100 + this.salary.DA / 100 +
+                this.salary.SPA / 100 + this.salary.conveyance / 100 + this.salary.medical / 100 +
+                this.salary.gratuity / 100));
+
+        // Calculate net salary
+        this.salary.netSalary = this.salary.totalEarnings - this.salary.totalDeductions;
+
+    } catch (error) {
+        console.error('Error calculating or saving salary:', error);
+        throw new Error('Error calculating or saving salary');
+    }
+    next();
+});
+
+
 
 export const User = mongoose.model("User", userSchema)

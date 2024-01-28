@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 import { Leave } from "../models/leave.model.js";
+import { Attendance } from "../models/attendance.model.js";
 
 const convertToDDMMYYYY = (inputDate) => {
     const dateParts = inputDate.split("-");
@@ -102,7 +103,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const isPasswordValid = await user.isPasswordCorrect(password)
 
     if (!isPasswordValid) {
-        throw new ApiError(401, "Invalid user credentials")
+        throw new ApiError(401, "Invalid Password")
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id)
@@ -238,7 +239,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 })
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-    console.log(req.body);
+
     const {
         employeeId,
         firstname,
@@ -265,7 +266,19 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
         bloodGroup,
         DOB,
         anniversaryDate,
-        maritalStatus
+        maritalStatus,
+        basic,
+        HRA,
+        PA,
+        DA,
+        SPA,
+        EPF,
+        PT,
+        IT,
+        conveyance,
+        medical,
+        bonus,
+        gratuity,
     } = req.body;
 
 
@@ -273,7 +286,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     const updateFields = {};
     const address = {};
     const emergency = {}
-
+    const salary = {};
     if (firstname) {
         updateFields.firstname = firstname;
     }
@@ -401,15 +414,55 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     if (anniversaryDate) {
         updateFields.anniversaryDate = anniversaryDate;
     }
+    if (basic) {
+        salary.basic = basic;
+    }
+    if (HRA) {
+        salary.HRA = HRA;
+    }
+    if (PA) {
+        salary.PA = PA;
+    }
+    if (DA) {
+        salary.DA = DA;
+    }
+    if (SPA) {
+        salary.SPA = SPA;
+    }
+    if (EPF) {
+        salary.EPF = EPF;
+    }
+    if (PT) {
+        salary.PT = PT;
+    }
+    if (IT) {
+        salary.IT = IT;
+    }
+    if (conveyance) {
+        salary.conveyance = conveyance;
+    }
+    if (medical) {
+        salary.medical = medical;
+    }
+    if (bonus) {
+        salary.bonus = bonus;
+    }
+    if (gratuity) {
+        salary.gratuity = gratuity;
+    }
+    if (Object.keys(salary).length > 0) {
+        updateFields.salary = salary;
+    }
 
-
-    await User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         employeeId,
         { $set: updateFields },
         { new: true }
     ).select("-password");
 
-    const users = await User.find({});
+
+    const users = await User.find({})
+
 
     return res.status(200).json(new ApiResponse(200, users, "Account details updated successfully"));
 });
@@ -512,7 +565,7 @@ const leavedata = asyncHandler(async (req, res) => {
         .populate({
             path: 'employeeId',
             model: 'User',
-            select: 'firstname lastname salary leave'
+            select: 'firstname lastname  leave'
         });
 
     res.status(201).json(
@@ -555,8 +608,127 @@ const leaveAction = asyncHandler(async (req, res) => {
     );
 });
 
+const addAttendance = asyncHandler(async (req, res) => {
+    const { date, present, absent } = req.body
 
+    const attendance = await Attendance.create({
+        date: date,
+        present: [present],
+        absent: [absent]
+    })
+    res.status(201).json(
+        new ApiResponse(201, attendance, "Attendance added Successfully")
+    )
+})
 
+const attendanceData = asyncHandler(async (req, res) => {
+
+    const attendance = await Attendance.find({})
+        .populate({
+            path: 'present',
+            model: 'User',
+            select: 'firstname lastname empID leave'
+        })
+        .populate({
+            path: 'absent',
+            model: 'User',
+            select: 'firstname lastname empID leave'
+        });
+    res.status(201).json(
+        new ApiResponse(201, attendance, "Attendance fetched successfully")
+    );
+}
+)
+
+const updateAttendance = asyncHandler(async (req, res) => {
+    const { date, id, action } = req.body;
+
+    try {
+        if (action === "Present" || action === "Absent") {
+            let dateExist = await Attendance.findOne({ date: date });
+
+            if (!dateExist) {
+                const attendance = await Attendance.create({
+                    date: date,
+                    present: action === "Present" ? [id] : [],
+                    absent: action === "Absent" ? [id] : []
+                });
+                const attendanceData = await Attendance.find({})
+                    .populate({
+                        path: 'present',
+                        model: 'User',
+                        select: 'firstname lastname empID leave'
+                    })
+                    .populate({
+                        path: 'absent',
+                        model: 'User',
+                        select: 'firstname lastname empID leave'
+                    });
+                return res.status(200).json(
+                    new ApiResponse(200, attendanceData, "Attendance added Successfully")
+                );
+            }
+
+            const updateQuery = {
+                $addToSet: {
+                    present: action === "Present" ? id : undefined,
+                    absent: action === "Absent" ? id : undefined
+                }
+            };
+
+            // If switching from Present to Absent, remove from present array
+            if (action === "Absent") {
+                updateQuery.$pull = { present: id };
+            }
+
+            // If switching from Absent to Present, remove from absent array
+            if (action === "Present") {
+                updateQuery.$pull = { absent: id };
+            }
+
+            const updatedAttendance = await Attendance.findOneAndUpdate(
+                { date: date },
+                updateQuery,
+                { new: true }
+            );
+            const attendance = await Attendance.find({})
+                .populate({
+                    path: 'present',
+                    model: 'User',
+                    select: 'firstname lastname empID leave'
+                })
+                .populate({
+                    path: 'absent',
+                    model: 'User',
+                    select: 'firstname lastname empID leave'
+                });
+
+            return res.status(200).json(
+                new ApiResponse(200, attendance, "Attendance updated Successfully")
+            );
+        } else {
+            return res.status(400).json(
+                new ApiResponse(400, null, "Invalid action. Accepted values are 'Present' or 'Absent'")
+            );
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json(
+            new ApiResponse(500, null, "Internal Server Error")
+        );
+    }
+});
+
+const calculateSalary = asyncHandler(async (req, res) => {
+    const { id } = req.body;
+
+    const user = await User.findById(id);
+    const salary = user.calculateSalary();
+
+    return res.status(200).json(
+        new ApiResponse(200, salary, "Salary calculated successfully")
+    );
+});
 
 export {
     registerUser,
@@ -572,5 +744,8 @@ export {
     applyLeave,
     leavedata,
     leaveAction,
-
+    addAttendance,
+    attendanceData,
+    updateAttendance,
+    calculateSalary
 }
