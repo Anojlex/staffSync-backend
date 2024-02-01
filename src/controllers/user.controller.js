@@ -36,7 +36,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
 
-    console.log(req.body);
+
     const { firstname, lastname, email, phone, password, empID, joiningDate, department, designation } = req.body
 
 
@@ -86,7 +86,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
 
-    console.log(req.body);
+
     const { email, password } = req.body
 
 
@@ -188,16 +188,17 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             secure: true
         }
 
-        const { accessToken, newRefreshToken } = await generateAccessAndRefereshTokens(user._id)
+        const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id)
+        const loggedInUser = await User.findById(decodedToken?._id).select("-password -refreshToken")
 
         return res
             .status(200)
             .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", newRefreshToken, options)
+            .cookie("refreshToken", refreshToken, options)
             .json(
                 new ApiResponse(
                     200,
-                    { accessToken, refreshToken: newRefreshToken },
+                    { user: loggedInUser, accessToken, refreshToken },
                     "Access token refreshed"
                 )
             )
@@ -641,6 +642,7 @@ const attendanceData = asyncHandler(async (req, res) => {
 )
 
 const updateAttendance = asyncHandler(async (req, res) => {
+
     const { date, id, action } = req.body;
 
     try {

@@ -51,6 +51,6 @@ router.route("/add-attendance").post(addAttendance)
 
 router.route("/attendanceData").get(attendanceData)
 
-router.route("/update-attendance").post(updateAttendance)
+router.route("/update-attendance").post(verifyJWT, updateAttendance)
 
 export default router 

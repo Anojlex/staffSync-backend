@@ -225,6 +225,11 @@ const userSchema = new Schema(
                 type: Number,
                 required: false
             },
+        },
+        role: {
+            type: String,
+            required: true,
+            default: "employee",
         }
 
     },
@@ -273,41 +278,6 @@ userSchema.methods.generateRefreshToken = function () {
 }
 
 
-
-
-userSchema.pre("validate", async function (next) {
-
-    const salaryPaths = [
-        'salary.basic', 'salary.HRA',
-        'salary.PA', 'salary.DA', 'salary.SPA', 'salary.EPF',
-        'salary.PT', 'salary.IT', 'salary.conveyance', 'salary.medical',
-        'salary.gratuity'
-    ];
-
-    if (!this.isModified(...salaryPaths)) {
-        return next();
-    }
-
-    try {
-        this.salary.totalDeductions = (this.salary.basic * this.salary.EPF / 100) +
-            (this.salary.basic * this.salary.PT / 100) +
-            (this.salary.basic * this.salary.IT / 100);
-
-        // Calculate total earnings
-        this.salary.totalEarnings = this.salary.basic +
-            (this.salary.basic * (this.salary.HRA / 100 + this.salary.PA / 100 + this.salary.DA / 100 +
-                this.salary.SPA / 100 + this.salary.conveyance / 100 + this.salary.medical / 100 +
-                this.salary.gratuity / 100));
-
-        // Calculate net salary
-        this.salary.netSalary = this.salary.totalEarnings - this.salary.totalDeductions;
-
-    } catch (error) {
-        console.error('Error calculating or saving salary:', error);
-        throw new Error('Error calculating or saving salary');
-    }
-    next();
-});
 
 
 
