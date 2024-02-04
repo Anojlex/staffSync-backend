@@ -10,10 +10,11 @@ const app = express()
 
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
-    credential: true,
-    allowedHeaders: 'Content-Type,Authorization',
-}))
+    origin: "staffsync-hrm.onrender.com", // Specify the exact origin of your frontend
+    methods: ["GET", "POST", "PATCH", "DELETE"],
+    credentials: true, // Use true instead of 'true'
+    allowedHeaders: 'Content-Type, Authorization',
+}));
 
 app.use(express.json({ limit: "16kb" }))
 app.use(express.urlencoded({ extended: true, limit: "16kb" }))
