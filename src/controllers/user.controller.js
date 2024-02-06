@@ -732,6 +732,87 @@ const calculateSalary = asyncHandler(async (req, res) => {
     );
 });
 
+
+const addToDo = asyncHandler(async (req, res) => {
+    console.log(req.body);
+    const { employeeId, todo } = req.body;
+
+    if (!req.body.employeeId) {
+        return res.status(400).json(
+            new ApiResponse(400, null, "Employee ID is required")
+        );
+    }
+    if (!req.body.todo) {
+        return res.status(400).json(
+            new ApiResponse(400, null, "Todo is required")
+        );
+    }
+
+    const user = await User.findById(employeeId);
+    user.todo.push(todo);
+    await user.save();
+    const users = await User.find({});
+    return res.status(200).json(
+        new ApiResponse(200, users, "Todo added successfully")
+    );
+})
+
+
+const editToDo = asyncHandler(async (req, res) => {
+    console.log(req.body);
+    const { employeeId, todoId, todo } = req.body;
+
+    if (!req.body.employeeId || !req.body.todoId || !req.body.todo) {
+        return res.status(400).json(
+            new ApiResponse(400, null, "Employee ID, Todo ID and Todo are required")
+        );
+    }
+
+
+    const user = await User.findById(employeeId);
+    const todoIndex = user.todo.findIndex((t) => t._id.toString() === todoId);
+    if (todoIndex === -1) {
+        return res.status(404).json(
+            new ApiResponse(404, null, "Todo not found")
+        );
+    }
+    user.todo[todoIndex] = todo;
+    await user.save();
+    const users = await User.find({});
+    return res.status(200).json(
+        new ApiResponse(200, users, "Todo updated successfully")
+    );
+
+
+})
+
+
+const deleteToDo = asyncHandler(async (req, res) => {
+    console.log(req.body);
+    const { employeeId, todoId } = req.body;
+
+    if (!req.body.employeeId || !req.body.todoId) {
+        return res.status(400).json(
+            new ApiResponse(400, null, "Employee ID and Todo ID are required")
+        );
+    }
+
+    const user = await User.findById(employeeId);
+    const todoIndex = user.todo.findIndex((t) => t._id.toString() === todoId);
+    if (todoIndex === -1) {
+        return res.status(404).json(
+            new ApiResponse(404, null, "Todo not found")
+        );
+    }
+    user.todo.splice(todoIndex, 1);
+    await user.save();
+    const users = await User.find({});
+    return res.status(200).json(
+        new ApiResponse(200, users, "Todo deleted successfully")
+    );
+
+});
+
 export {
     registerUser,
     loginUser,
@@ -749,5 +830,8 @@ export {
     addAttendance,
     attendanceData,
     updateAttendance,
-    calculateSalary
+    calculateSalary,
+    addToDo,
+    editToDo,
+    deleteToDo
 }

@@ -14,7 +14,10 @@ import {
     leaveAction,
     addAttendance,
     attendanceData,
-    updateAttendance
+    updateAttendance,
+    addToDo,
+    editToDo,
+    deleteToDo
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -52,5 +55,11 @@ router.route("/add-attendance").post(addAttendance)
 router.route("/attendanceData").get(attendanceData)
 
 router.route("/update-attendance").post(verifyJWT, updateAttendance)
+
+router.route("/add-todo").post(addToDo)
+
+router.route("/update-todo").post(editToDo)
+
+router.route("/delete-todo").post(deleteToDo)
 
 export default router 

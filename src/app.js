@@ -10,7 +10,7 @@ const app = express()
 
 
 app.use(cors({
-    origin: "https://staffsync-hrm.onrender.com", // Specify the exact origin of your frontend
+    origin: "http://localhost:5173https://staffsync-hrm.onrender.com", // Specify the exact origin of your frontend
     methods: ["GET", "POST", "PATCH", "DELETE"],
     credentials: true, // Use true instead of 'true'
     allowedHeaders: 'Content-Type, Authorization',
