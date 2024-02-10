@@ -6,9 +6,6 @@ import bodyParser from 'body-parser'
 
 const app = express()
 
-
-
-
 app.use(cors({
     origin: "https://staffsync-hrm.onrender.com", // Specify the exact origin of your frontend
     methods: ["GET", "POST", "PATCH", "DELETE"],
